@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2015 by Artur Wroblewski <wrobell@pld-linux.org>
 #
@@ -16,25 +15,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import argparse
-import logging
+import tornado.web
+import tawf
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '-v', '--verbose', action='store_true', dest='verbose', default=False,
-        help='explain what is being done'
-)
-parser.add_argument('dashboard', help='dashboard directory')
-parser.add_argument('input', nargs='?', help='data file to replay')
-args = parser.parse_args()
 
-print(args.input)
-if args.verbose:
-    logging.basicConfig(level=logging.DEBUG)
-else:
-    logging.basicConfig(level=logging.WARN)
+def create_app(path, host='0.0.0.0', port=8090):
+    app = tawf.Application([
+        (r'/(.*)', tornado.web.StaticFileHandler, {'path': path}),
+    ])
 
-import mocto.core
-mocto.core.start(input=args.input, dashboard=args.dashboard)
+    @app.sse('/data', mimetype='application/json')
+    def data(callback):
+        while True:
+            data = yield from app._topic.get()
+            for item in data:
+                callback(item._asdict())
+
+    app.listen(port, address=host)
+
+    return app
 
 # vim: sw=4:et:ai

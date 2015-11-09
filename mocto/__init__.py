@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2015 by Artur Wroblewski <wrobell@pld-linux.org>
 #
@@ -15,26 +14,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-import argparse
-import logging
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '-v', '--verbose', action='store_true', dest='verbose', default=False,
-        help='explain what is being done'
-)
-parser.add_argument('dashboard', help='dashboard directory')
-parser.add_argument('input', nargs='?', help='data file to replay')
-args = parser.parse_args()
-
-print(args.input)
-if args.verbose:
-    logging.basicConfig(level=logging.DEBUG)
-else:
-    logging.basicConfig(level=logging.WARN)
-
-import mocto.core
-mocto.core.start(input=args.input, dashboard=args.dashboard)
 
 # vim: sw=4:et:ai
