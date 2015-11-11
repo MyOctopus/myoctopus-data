@@ -1,0 +1,35 @@
+Read data from sensors. The application uses Python's asyncio framework and
+integrates with Tornado to allow other applications to get data with
+Server-Sent Event messages.
+
+Dependencies
+
+- Python 3.4
+- Tornado
+- h5py
+- TAWF: get from https://bitbucket.org/wrobell/tawf
+- n23: get from https://bitbucket.org/wrobell/n23
+- myoctopus-dashboard: get from https://github.com/MyOctopus/myoctopus-data
+
+    cd myoctopus-data
+    PYTHONPATH=.:../tawf:../n23 python3 bin/mocto-data -v ../myoctopus-dashboard/ 20151010-1245-humidity-light.hdf
+
+Try the data stream
+
+    $ curl http://localhost:8090/data
+    event: message
+    data: {"name": "light", "counter": 1, "time": 1447091809.00141, "value": 1315962.875}
+
+    event: message
+    data: {"name": "humidity", "counter": 1, "time": 1447091809.00141, "value": 26.715087890625}
+
+    event: message
+    data: {"name": "light", "counter": 2, "time": 1447091810.0017693, "value": 1315635.25}
+
+    event: message
+    data: {"name": "humidity", "counter": 2, "time": 1447091810.0017693, "value": 26.715087890625}
+
+Try the browser
+
+    http://localhost:8090/dashboard.html
+
