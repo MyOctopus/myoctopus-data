@@ -47,19 +47,10 @@ def workflow(topic, fin, files=None):
     names = ['light', 'humidity']
     for name in names:
         data_log = n23.data_logger(f, name, 60) if f else None
-        topic_send = broadcast(topic)
-        consume = n23.split(topic_send, data_log)
+        consume = n23.split(topic.put_nowait, data_log)
 
         scheduler.add(name, replay(fin, name), consume)
     return scheduler()
-
-
-@n23.coroutine
-def broadcast(topic):
-    while True:
-        v1 = yield
-        v2 = yield
-        topic.put([v1, v2])
 
 
 def replay(f, group_name):
