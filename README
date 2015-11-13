@@ -29,7 +29,7 @@ Try the data stream
     event: message
     data: {"name": "humidity", "counter": 2, "time": 1447091810.0017693, "value": 26.715087890625}
 
-Try the browser
+Try the dashboard
 
     http://localhost:8090/dashboard.html
 
