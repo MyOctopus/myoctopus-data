@@ -23,22 +23,35 @@ import n23
 
 from .ws import create_app
 
-def start(input=None, dashboard=None):
-    scheduler = n23.Scheduler(1)
-
+def start(input=None, dashboard=None, data_dir=None, rotate=None):
     topic = n23.Topic()
     app = create_app(dashboard)
     app._topic = topic
 
     fin = h5py.File(input)
 
-    workflow = broadcast(topic).send
-    
-    scheduler.add('light', replay(fin, 'light'), workflow)
-    scheduler.add('humidity', replay(fin, 'humidity'), workflow)
+    files = None
+    if data_dir:
+        files = n23.data_logger_file('mocto', data_dir)
 
+    w = n23.cycle(rotate, workflow, topic, fin, files=files)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(scheduler()) 
+    loop.run_until_complete(w)
+
+
+def workflow(topic, fin, files=None):
+    scheduler = n23.Scheduler(1)
+    f = next(files) if files else None
+
+    # for each sensor
+    names = ['light', 'humidity']
+    for name in names:
+        data_log = n23.data_logger(f, name, 60) if f else None
+        topic_send = broadcast(topic)
+        consume = n23.split(topic_send, data_log)
+
+        scheduler.add(name, replay(fin, name), consume)
+    return scheduler()
 
 
 @n23.coroutine

@@ -25,16 +25,27 @@ parser.add_argument(
         help='explain what is being done'
 )
 parser.add_argument('dashboard', help='dashboard directory')
+parser.add_argument(
+    '-d', '--data-dir', dest='data_dir',
+    help='enable data logging in the directory'
+)
+parser.add_argument(
+    '-r', '--rotate', dest='rotate', type=int, default=3600,
+    help='rotate data log file every ROTATE seconds (default 3600s); ' \
+        'set to 0 to disable'
+)
 parser.add_argument('input', nargs='?', help='data file to replay')
 args = parser.parse_args()
 
-print(args.input)
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
 else:
     logging.basicConfig(level=logging.WARN)
 
 import mocto.core
-mocto.core.start(input=args.input, dashboard=args.dashboard)
+mocto.core.start(
+    input=args.input, dashboard=args.dashboard, data_dir=args.data_dir,
+    rotate=args.rotate,
+)
 
 # vim: sw=4:et:ai
