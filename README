@@ -12,9 +12,9 @@ Dependencies
 - myoctopus-dashboard: get from https://github.com/MyOctopus/myoctopus-data
 
     cd myoctopus-data
-    PYTHONPATH=.:../tawf:../n23 python3 bin/mocto-data -v ../myoctopus-dashboard/ 20151010-1245-humidity-light.hdf
+    PYTHONPATH=.:../tawf:../n23 python3 bin/mocto-data -v -w ../myoctopus-dashboard/ -c mocto::data 20151010-1245-humidity-light.hdf
 
-Try the data stream
+Try the data stream over HTTP::
 
     $ curl http://localhost:8090/data
     event: message
@@ -28,6 +28,28 @@ Try the data stream
 
     event: message
     data: {"name": "humidity", "counter": 2, "time": 1447091810.0017693, "value": 26.715087890625}
+
+Try the data stream using Redis::
+
+    $ redis-cli
+    127.0.0.1:6379> subscribe mocto::data
+    Reading messages... (press Ctrl-C to quit)
+    1) "subscribe"
+    2) "mocto::data"
+    3) (integer) 1
+    1) "message"
+    2) "mocto::data"
+    3) "{\"name\": \"humidity\", \"counter\": 6, \"time\": 1447497288.0016613, \"value\": 26.812744140625}"
+    1) "message"
+    2) "mocto::data"
+    3) "{\"name\": \"light\", \"counter\": 6, \"time\": 1447497288.0016613, \"value\": 1318912.0}"
+    1) "message"
+    2) "mocto::data"
+    3) "{\"name\": \"light\", \"counter\": 7, \"time\": 1447497289.0016828, \"value\": 1316945.875}"
+    1) "message"
+    2) "mocto::data"
+    3) "{\"name\": \"humidity\", \"counter\": 7, \"time\": 1447497289.0016828, \"value\": 26.715087890625}"
+
 
 Try the dashboard
 
