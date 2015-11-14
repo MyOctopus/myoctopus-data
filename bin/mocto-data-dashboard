@@ -16,6 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+"""
+Start dashboard on HTTP server and read data from Redis channel.
+"""
+
 import argparse
 import logging
 
@@ -24,24 +28,8 @@ parser.add_argument(
     '-v', '--verbose', action='store_true', dest='verbose', default=False,
         help='explain what is being done'
 )
-parser.add_argument(
-    '-w', '--dashboard', dest='dashboard',
-    help='server dashboard application from the directory DASHBOARD'
-)
-parser.add_argument(
-    '-d', '--data-dir', dest='data_dir',
-    help='enable data logging in the directory'
-)
-parser.add_argument(
-    '-r', '--rotate', dest='rotate', type=int, default=3600,
-    help='rotate data log file every ROTATE seconds (default 3600s); ' \
-        'set to 0 to disable'
-)
-parser.add_argument(
-    '-c', '--channel', dest='channel',
-    help='send data to Redis channel CHANNEL'
-)
-parser.add_argument('input', nargs='?', help='data file to replay')
+parser.add_argument('dashboard', help='dashboard directory')
+parser.add_argument('channel', help='redis channel to read data from')
 args = parser.parse_args()
 
 if args.verbose:
@@ -49,10 +37,33 @@ if args.verbose:
 else:
     logging.basicConfig(level=logging.WARN)
 
-import mocto.core
-mocto.core.start(
-    input=args.input, dashboard=args.dashboard, data_dir=args.data_dir,
-    rotate=args.rotate, channel=args.channel
-)
+
+import asyncio
+
+import aioredis
+import tornado.web
+import tawf
+
+logger = logging.getLogger(__name__)
+
+app = tawf.Application([
+    (r'/(.*)', tornado.web.StaticFileHandler, {'path': args.dashboard}),
+])
+
+@app.sse('/data')
+def data(callback):
+    client = yield from aioredis.create_redis(('localhost', 6379))
+    channel, = yield from client.subscribe(args.channel)
+
+    if __debug__:
+        logger.debug('connected to redis server')
+
+    while True:
+        data = yield from channel.get()
+        callback(data)
+
+app.listen(8090, address='0.0.0.0')
+loop = asyncio.get_event_loop()
+loop.run_forever()
 
 # vim: sw=4:et:ai

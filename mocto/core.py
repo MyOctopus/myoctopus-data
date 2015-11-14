@@ -31,7 +31,8 @@ def start(input=None, dashboard=None, data_dir=None, rotate=None,
         channel=None):
 
     topic = n23.Topic()
-    app = create_app(topic, dashboard)
+    if dashboard:
+        create_app(topic, dashboard)
 
     fin = h5py.File(input)
 
