@@ -17,13 +17,19 @@
 
 import asyncio
 import itertools
+import logging
 
 import h5py
 import n23
 
 from .ws import create_app
 
-def start(input=None, dashboard=None, data_dir=None, rotate=None):
+logger = logging.getLogger(__name__)
+
+
+def start(input=None, dashboard=None, data_dir=None, rotate=None,
+        channel=None):
+
     topic = n23.Topic()
     app = create_app(topic, dashboard)
 
@@ -33,12 +39,12 @@ def start(input=None, dashboard=None, data_dir=None, rotate=None):
     if data_dir:
         files = n23.data_logger_file('mocto', data_dir)
 
-    w = n23.cycle(rotate, workflow, topic, fin, files=files)
+    w = n23.cycle(rotate, workflow, topic, fin, files=files, channel=channel)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(w)
 
 
-def workflow(topic, fin, files=None):
+def workflow(topic, fin, files=None, channel=None):
     scheduler = n23.Scheduler(1)
     f = next(files) if files else None
 
@@ -49,11 +55,31 @@ def workflow(topic, fin, files=None):
         consume = n23.split(topic.put_nowait, data_log)
 
         scheduler.add(name, replay(fin, name), consume)
-    return scheduler()
+
+    tasks = [scheduler()]
+    if channel:
+        p = publish(topic, channel)
+        tasks.append(p)
+        logger.info('publish data to redis channel {}'.format(channel))
+
+    return asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
 
 
 def replay(f, group_name):
     data = itertools.cycle(f[group_name + '/data'])
     return lambda: float(next(data)[0])
+
+
+@asyncio.coroutine
+def publish(topic, name):
+    import aioredis
+    client = yield from aioredis.create_redis(('localhost', 6379))
+    if __debug__:
+        logger.debug('connected to redis server')
+    while True:
+        values = yield from topic.get()
+        for v in values:
+            client.publish_json(name, v._asdict())
+
 
 # vim: sw=4:et:ai

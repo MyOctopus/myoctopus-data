@@ -34,6 +34,10 @@ parser.add_argument(
     help='rotate data log file every ROTATE seconds (default 3600s); ' \
         'set to 0 to disable'
 )
+parser.add_argument(
+    '-c', '--channel', dest='channel',
+    help='send data to Redis channel CHANNEL'
+)
 parser.add_argument('input', nargs='?', help='data file to replay')
 args = parser.parse_args()
 
@@ -45,7 +49,7 @@ else:
 import mocto.core
 mocto.core.start(
     input=args.input, dashboard=args.dashboard, data_dir=args.data_dir,
-    rotate=args.rotate,
+    rotate=args.rotate, channel=args.channel
 )
 
 # vim: sw=4:et:ai
