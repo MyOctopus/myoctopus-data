@@ -19,7 +19,7 @@ import tornado.web
 import tawf
 
 
-def create_app(path, host='0.0.0.0', port=8090):
+def create_app(topic, path, host='0.0.0.0', port=8090):
     app = tawf.Application([
         (r'/(.*)', tornado.web.StaticFileHandler, {'path': path}),
     ])
@@ -27,7 +27,7 @@ def create_app(path, host='0.0.0.0', port=8090):
     @app.sse('/data', mimetype='application/json')
     def data(callback):
         while True:
-            data = yield from app._topic.get()
+            data = yield from topic.get()
             for item in data:
                 callback(item._asdict())
 

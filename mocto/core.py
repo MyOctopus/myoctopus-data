@@ -25,8 +25,7 @@ from .ws import create_app
 
 def start(input=None, dashboard=None, data_dir=None, rotate=None):
     topic = n23.Topic()
-    app = create_app(dashboard)
-    app._topic = topic
+    app = create_app(topic, dashboard)
 
     fin = h5py.File(input)
 
