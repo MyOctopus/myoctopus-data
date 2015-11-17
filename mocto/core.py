@@ -16,6 +16,7 @@
 #
 
 import asyncio
+import functools
 import itertools
 import logging
 
@@ -27,35 +28,41 @@ from .ws import create_app
 logger = logging.getLogger(__name__)
 
 
-def start(input=None, dashboard=None, data_dir=None, rotate=None,
-        channel=None):
+def start(device, dashboard=None, data_dir=None, rotate=None, channel=None,
+        replay=None):
 
     topic = n23.Topic()
     if dashboard:
         create_app(topic, dashboard)
 
-    fin = h5py.File(input)
-
     files = None
     if data_dir:
         files = n23.data_logger_file('mocto', data_dir)
 
-    w = n23.cycle(rotate, workflow, topic, fin, files=files, channel=channel)
+    w = n23.cycle(
+        rotate, workflow, topic, device, files=files, channel=channel,
+        replay=replay
+    )
     loop = asyncio.get_event_loop()
     loop.run_until_complete(w)
 
 
-def workflow(topic, fin, files=None, channel=None):
-    scheduler = n23.Scheduler(1)
-    f = next(files) if files else None
+def workflow(topic, device, files=None, channel=None, replay=None):
+    scheduler = n23.Scheduler(1, timeout=0.25)
+    fout = next(files) if files else None
 
-    # for each sensor
-    names = ['light', 'humidity']
-    for name in names:
-        data_log = n23.data_logger(f, name, 60) if f else None
-        consume = n23.split(topic.put_nowait, data_log)
+    if replay:
+        logger.info('replaying a data file {}'.format(replay))
+        fin = h5py.File(replay)
 
-        scheduler.add(name, replay(fin, name), consume)
+        # for each sensor
+        names = ['light', 'humidity']
+        for name in names:
+            data_log = n23.data_logger(fout, name, 60) if fout else None
+            consume = n23.split(topic.put_nowait, data_log)
+            scheduler.add(name, replay_file(fin, name), consume)
+    else:
+        raise ValueError('Reading from a device not supported yet')
 
     tasks = [scheduler()]
     if channel:
@@ -63,10 +70,10 @@ def workflow(topic, fin, files=None, channel=None):
         tasks.append(p)
         logger.info('publish data to redis channel {}'.format(channel))
 
-    return asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+    return asyncio.gather(*tasks)
 
 
-def replay(f, group_name):
+def replay_file(f, group_name):
     data = itertools.cycle(f[group_name + '/data'])
     return lambda: float(next(data)[0])
 

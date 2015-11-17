@@ -12,7 +12,7 @@ Dependencies
 - myoctopus-dashboard: get from https://github.com/MyOctopus/myoctopus-data
 
     cd myoctopus-data
-    PYTHONPATH=.:../tawf:../n23 python3 bin/mocto-data -v -w ../myoctopus-dashboard/ -c mocto::data 20151010-1245-humidity-light.hdf
+    PYTHONPATH=.:../tawf:../n23 python3 bin/mocto-data -v -w ../myoctopus-dashboard/ -c mocto::data --replay 20151010-1245-humidity-light.hdf
 
 Try the data stream over HTTP::
 

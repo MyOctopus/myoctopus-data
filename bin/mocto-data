@@ -41,7 +41,8 @@ parser.add_argument(
     '-c', '--channel', dest='channel',
     help='send data to Redis channel CHANNEL'
 )
-parser.add_argument('input', nargs='?', help='data file to replay')
+parser.add_argument('--replay', dest='replay', help='data file to replay')
+parser.add_argument('device', help='sensor device to connect to')
 args = parser.parse_args()
 
 if args.verbose:
@@ -51,8 +52,8 @@ else:
 
 import mocto.core
 mocto.core.start(
-    input=args.input, dashboard=args.dashboard, data_dir=args.data_dir,
-    rotate=args.rotate, channel=args.channel
+    args.device, dashboard=args.dashboard, data_dir=args.data_dir,
+    rotate=args.rotate, channel=args.channel, replay=args.replay
 )
 
 # vim: sw=4:et:ai
